@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tactical Sentry Dashboard</title>
+    <style>
+        body { background-color: #0b0e14; color: #00ff41; font-family: 'Courier New', Courier, monospace; text-align: center; }
+        .header { border-bottom: 2px solid #00ff41; padding: 20px; margin-bottom: 20px; }
+        .monitor-frame { border: 10px solid #1a1f29; display: inline-block; border-radius: 8px; box-shadow: 0 0 20px rgba(0,255,65,0.2); }
+        .status-box { margin-top: 20px; font-size: 1.2rem; }
+        .alert-active { color: #ff003c; animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>TACTICAL PERIMETER SENTRY v1.0</h1>
+        <p>UNIT: 2(T) AIR SQN (TECH) - AI SURVEILLANCE NODE</p>
+    </div>
+
+    <div class="monitor-frame">
+        <img src="{{ url_for('video_feed') }}" width="800">
+    </div>
+
+    <div class="status-box">
+        SYSTEM STATUS: <span style="color: white;">ACTIVE</span> | 
+        THREAT LEVEL: <span id="threat-level">SCANNING...</span>
+    </div>
+</body>
+</html>

@@ -1,0 +1,44 @@
+import cv2
+from flask import Flask, Response, render_template_string
+from ultralytics import YOLO
+
+app = Flask(__name__)
+model = YOLO('yolov8n.pt')  # Downloads automatically on first run
+
+# HTML Template for the Dashboard
+HTML = """
+<html>
+    <head><title>Sentry AI</title></head>
+    <body style="background:#111; color:white; text-align:center; font-family:sans-serif;">
+        <h1>🛡️ Tactical Perimeter Sentry</h1>
+        <hr>
+        <img src="/video_feed" style="border: 5px solid #333; width: 80%;">
+        <h3>Status: <span style="color:green;">Live Monitoring Active</span></h3>
+    </body>
+</html>
+"""
+
+def generate_frames():
+    cap = cv2.VideoCapture(0)
+    while True:
+        success, frame = cap.read()
+        if not success: break
+        
+        # Human Detection (Class 0 is person in YOLO)
+        results = model.predict(frame, classes=[0], conf=0.4, verbose=False)
+        annotated_frame = results[0].plot()
+        
+        # Convert to Web format
+        ret, buffer = cv2.imencode('.jpg', annotated_frame)
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+@app.route('/')
+def index(): return render_template_string(HTML)
+
+@app.route('/video_feed')
+def video_feed(): return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == "__main__":
+    print("🚀 Sentry Dashboard starting at http://127.0.0.1:5000")
+    app.run(debug=False, port=5000)

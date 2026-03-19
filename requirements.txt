@@ -1,4 +1,3 @@
-flask
-ultralytics
+streamlit
 opencv-python-headless
-gunicorn
+numpy

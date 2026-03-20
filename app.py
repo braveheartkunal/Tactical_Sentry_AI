@@ -1,35 +1,35 @@
-from flask import Flask, render_template, Response
 import cv2
-from sentry_logic import SentryAI
+from ultralytics import YOLO
+import numpy as np
 
-app = Flask(__name__)
-sentry = SentryAI()
+# Load the model
+model = YOLO('yolov8n.pt') 
 
-def generate_frames():
-    # REPLACE '0' with your CCTV RTSP link
-    # Example: camera = cv2.VideoCapture("rtsp://admin:12345@192.168.1.100:554/live")
-    camera = cv2.VideoCapture(0) 
+def process_video_upload(video_path):
+    cap = cv2.VideoCapture(video_path)
+    prev_centroids = {} # To track movement
     
-    # Set buffer size to low for real-time performance
-    camera.set(cv2.CAP_PROP_BUFFERSIZE, 2)
-    
-    while True:
-        success, frame = camera.read()
+    while cap.isOpened():
+        success, frame = cap.read()
         if not success:
             break
-        else:
-            processed_frame, alert, count = sentry.process_frame(frame)
-            ret, buffer = cv2.imencode('.jpg', processed_frame)
-            frame_bytes = buffer.tobytes()
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
-@app.route('/')
-def index():
-    return render_template('index.html')
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
+        # Detect only class 0 (Person)
+        results = model.predict(frame, classes=[0], conf=0.5)
+        
+        for result in results:
+            boxes = result.boxes
+            for box in boxes:
+                # Get center of the human detection
+                x_center = (box.xyxy[0][0] + box.xyxy[0][2]) / 2
+                y_center = (box.xyxy[0][1] + box.xyxy[0][3]) / 2
+                current_centroid = (int(x_center), int(y_center))
 
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=5000, debug=True)
+                # Logic for "Movement": Compare current pos to previous frame
+                # If movement is > 5 pixels, trigger an alert
+                # [Detailed movement tracking logic goes here]
+                print(f"Human detected at {current_centroid}")
+
+    cap.release()
+
+# For a web deployment, you would wrap this in a Flask/FastAPI route

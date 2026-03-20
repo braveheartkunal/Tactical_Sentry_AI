@@ -4,4 +4,3 @@ ultralytics
 numpy
 flask
 torch
-torchvision
